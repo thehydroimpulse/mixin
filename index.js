@@ -117,11 +117,101 @@ function mixinProperties(mixinsMeta, mixin) {
 }
 
 /**
+ * Concatenate Properties
+ *
+ * This will take a Mixin, with all it's own mixins and properties.
+ *
+ *  * Go through each mixin and create a chain of properties. i.e If there
+ *    multiples of the same property key, then we'll chain them in order.
+ *    Which means, the first mixin will always be the most parent,
+ *    and the latest mixin will be the most child.
+ *
+ *    PropertyChains:
+ *    {
+ *      "name": [
+ *        {
+ *          mixin: mixin0
+ *          value: function() {}             [1]
+ *          parent: null                      |
+ *          children: mixin1                  |
+ *        },                                  |
+ *        {                                   |
+ *          mixin: mixin1                     |
+ *          value: function() {}              |
+ *          parent: mixin0                   [2]
+ *          children: mixin2                  |
+ *        },                                  |
+ *        {                                   |
+ *          mixin: mixin2                     |
+ *          value: function() {}             [3]
+ *          parent: mixin1                    |
+ *        }                                   -
+ *
+ *      ]
+ *
+ *    }
+ *
+ *  * Go through the chain and wrap each function to manage
+ *    the `_super` function properly.
+ *  * Merge primitive values (i.e non-functions) correctly. Right now
+ *    we'll just plainly keep the newest values.
+ *
+ */
+
+function concatenateProperties(mixins) {
+  var fnChain = {}, values = {};
+
+  // Go through each super mixin.
+  for (var i = 0; i < mixins.length; i++) {
+    var superMixin = mixins[i];
+
+    // Loop through each mixin.
+    for (var k = 0; k < superMixin.mixins.length; k++) {
+      var props = superMixin.mixins[k].properties;
+
+      for (var key in props) {
+        var value = props[key];
+        if (props.hasOwnProperty(key)) {
+          if ('function' === typeof value) {
+            console.log(value);
+          } else {
+            values[key] = value;
+          }
+        }
+      }
+
+    }
+  }
+
+  handleSuper(fnChain, values);
+
+  return values;
+}
+
+/**
+ * Handle super
+ */
+
+function handleSuper() {
+
+}
+
+/**
+ * Wrap Super
+ */
+
+function wrapSuper(func, superFunc) {
+
+}
+
+/**
  * Apply Mixin
  */
 
 function applyMixin(obj, mixins, partial) {
   var keys = [], values = {};
+
+  return concatenateProperties(mixins);
 
   for (var i = 0; i < mixins.length; i++) {
     var m = mixins[i];
@@ -134,6 +224,12 @@ function applyMixin(obj, mixins, partial) {
         var value = props[key];
         if (props.hasOwnProperty(key)) {
           values[key] = value;
+          Object.defineProperty(m, key, {
+            configurable: true,
+            enumerable: true,
+            value: value,
+            writable: true
+          });
         }
       }
     }
@@ -218,7 +314,7 @@ MixinPrototype.apply = function(obj) {
  * Reopen
  */
 
-MixinPrototype.reopen = function() {
+MixinPrototype.reopen = exports._reopen = function() {
   var mixin, tmp;
 
   if (this.properties) {
