@@ -309,12 +309,14 @@ function applyMixin(obj, mixins, partial) {
   var keys = [],
     values = {};
 
-  MixinPrototype.reopen.apply(mixins[0], obj);
+  //MixinPrototype.reopen.apply(mixins[0], obj);
   var props = concatenateProperties(mixins);
 
-  for(var key in props) {
-    if (props.hasOwnProperty(key)) {
-      mixins[0][key] = props[key];
+  if (obj) {
+    for(var key in props) {
+      if (props.hasOwnProperty(key)) {
+        obj[key] = props[key];
+      }
     }
   }
 
