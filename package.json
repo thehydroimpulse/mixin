@@ -1,8 +1,29 @@
 {
   "name": "hydro-mixin",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "keywords": [
+    "mixin",
+    "ember",
+    "js",
+    "class",
+    "simple",
+    "inherit",
+    "hydro"
+  ],
+  "license": "MIT",
   "author": "Daniel Fagnan <dnfagnan@gmail.com>",
+  "description": "A powerful, full-featured mixins for JavaScript. Inspired by Ember.",
+  "contributors": [
+    {
+      "name": "Daniel Fagnan",
+      "email": "dnfagnan@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheHydroImpulse/mixin"
+  },
   "dependencies": {
-    "underscore": "*"
+    "underscore": "~1.5.2"
   }
 }
