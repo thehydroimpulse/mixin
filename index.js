@@ -84,7 +84,6 @@ function mergeMixins(mixins, m, descs, values, base, keys) {
     }
   }
 
-  console.log(keys);
 }
 
 /**
@@ -310,25 +309,16 @@ function applyMixin(obj, mixins, partial) {
   var keys = [],
     values = {};
 
-  return concatenateProperties(mixins);
+  MixinPrototype.reopen.apply(mixins[0], obj);
+  var props = concatenateProperties(mixins);
 
-  for (var i = 0; i < mixins.length; i++) {
-    var m = mixins[i];
-
-    // Loop through each mixin.
-    for (var k = 0; k < m.mixins.length; k++) {
-      var props = m.mixins[k].properties;
-
-      for (var key in props) {
-        var value = props[key];
-        if (props.hasOwnProperty(key)) {
-          values[key] = value;
-        }
-      }
+  for(var key in props) {
+    if (props.hasOwnProperty(key)) {
+      mixins[0][key] = props[key];
     }
   }
 
-  return values;
+  return props;
 }
 
 /**

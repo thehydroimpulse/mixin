@@ -110,4 +110,14 @@ describe('mixin test', function() {
     assert.equal(p.name(), 'John Dave');
   });
 
+  it('should define the properties on the Mixin instance.', function() {
+    var Person = Mixin.create({
+      name: 'Dave'
+    });
+
+    Person.apply();
+
+    assert.equal(Person.name, 'Dave');
+  });
+
 });
