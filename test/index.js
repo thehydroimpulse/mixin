@@ -62,6 +62,20 @@ describe('mixin test', function() {
     });
 
     assert.equal('Chang', person.get('name'));
+  });
+
+  it('should apply the mixin', function() {
+
+    var person = Mixin.create({
+      name: 'John'
+    });
+
+    person.reopen({
+      name: 'Nick'
+    });
+
+    var p = person.apply();
+    console.log(p);
 
   });
 

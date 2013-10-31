@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 
-var applyMixin = require('./lib/apply');
 var _          = require('underscore');
 
 /**
@@ -16,6 +15,12 @@ var MixinPrototype;
  */
 
 exports = module.exports = Mixin;
+
+/**
+ * Collection
+ */
+
+exports.collection = [];
 
 /**
  * Expose `initMixin`
@@ -47,6 +52,105 @@ function initMixin(mixin, args) {
   }
 
   return mixin;
+}
+
+/**
+ * Merge Mixins
+ */
+
+function mergeMixins(mixins, m, descs, values, base, keys) {
+  var mixin, props, key, concats, mergings, meta;
+
+  function removeKeys(keyName) {
+    delete descs[keyName];
+    delete values[keyName];
+  }
+
+  for (var i = 0, n = mixins.length; i < n; i++) {
+    mixin = mixins[i];
+
+    props = mixinProperties(m, mixin);
+    if (props) {
+      concats = concatenatedMixinProperties('concatenatedProperties', props, values, base);
+      mergings = concatenatedMixinProperties('mergedProperties', props, values, base);
+
+      for (key in props) {
+        if (!props.hasOwnProperty(key)) {
+          continue;
+        }
+
+        keys.push(key);
+      }
+    }
+  }
+
+  console.log(keys);
+}
+
+/**
+ * concatenatedMixinProperties
+ */
+
+function concatenatedMixinProperties(concatProp, props, values, base) {
+  var concats;
+
+  concats = values[concatProp] || base[concatProp];
+  if (props[concatProp]) {
+    concats = concats ? concats.concat(props[concatProp]) : props[concatProp];
+  }
+
+  return concats;
+}
+
+/**
+ * Mixin Properties
+ */
+
+function mixinProperties(mixinsMeta, mixin) {
+  var guid;
+
+  if (mixin instanceof Mixin) {
+    return mixin.properties;
+  } else {
+    return mixin;
+  }
+}
+
+/**
+ * Apply Mixin
+ */
+
+function applyMixin(obj, mixins, partial) {
+  var keys = [], values = {};
+
+  for (var i = 0; i < mixins.length; i++) {
+    var m = mixins[i];
+
+    // Loop through each mixin.
+    for (var k = 0; k < m.mixins.length; k++) {
+      var props = m.mixins[k].properties;
+
+      for (var key in props) {
+        var value = props[key];
+        if (props.hasOwnProperty(key)) {
+          values[key] = value;
+        }
+      }
+    }
+
+    /**for (var j = m.mixins.length; j > 0; i--) {
+      var props = m.mixins[j-1].properties;
+      console.log(props);
+      /**for (var key in props) {
+        var value = props[key];
+        if (props.hasOwnProperty(key)) {
+          //console.log(key,value);
+        }
+      }
+    }**/
+  }
+
+  return values;
 }
 
 /**
