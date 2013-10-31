@@ -137,17 +137,6 @@ function applyMixin(obj, mixins, partial) {
         }
       }
     }
-
-    /**for (var j = m.mixins.length; j > 0; i--) {
-      var props = m.mixins[j-1].properties;
-      console.log(props);
-      /**for (var key in props) {
-        var value = props[key];
-        if (props.hasOwnProperty(key)) {
-          //console.log(key,value);
-        }
-      }
-    }**/
   }
 
   return values;

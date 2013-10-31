@@ -75,8 +75,9 @@ describe('mixin test', function() {
     });
 
     var p = person.apply();
-    console.log(p);
 
+    assert.equal(Object.keys(p).length, 1);
+    assert.equal(p.name, 'Nick');
   });
 
 });
