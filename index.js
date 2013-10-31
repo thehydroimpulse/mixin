@@ -259,7 +259,11 @@ function handleSuper(fnChain, values) {
     if (fnChain.hasOwnProperty(key)) {
       var value = fnChain[key];
 
-      function _wrap(obj) {
+      function _wrap(obj, parent) {
+        if (parent) {
+          obj.value = wrapSuper(obj.value);
+          return _wrap(obj);
+        }
 
         if (obj.child) {
           obj.value = wrapSuper(obj.child.value, obj.value);
@@ -269,7 +273,7 @@ function handleSuper(fnChain, values) {
         }
       }
 
-      _wrap(value);
+      _wrap(value, true);
 
       // Add this new fn to the values
       values[key] = value.value;
