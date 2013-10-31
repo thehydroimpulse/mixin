@@ -80,7 +80,7 @@ describe('mixin test', function() {
     assert.equal(p.name, 'Nick');
   });
 
-  it('should create an fnChain', function() {
+  it.skip('should create an fnChain', function() {
     var obj = Mixin.create({
       name: function() {
         return 123;
@@ -88,6 +88,28 @@ describe('mixin test', function() {
     });
 
     obj.apply();
+    assert.equal(obj.name(), 123);
+  });
+
+  it('should inherit from another Mixin', function() {
+
+    var parent = Mixin.create({
+      name: function() {
+        return 'John';
+      }
+    });
+
+    parent.reopen({
+      name: function() {
+        console.log(this._super());
+        return 'Dave'
+      }
+    });
+
+    var p = parent.apply();
+
+    console.log(p.name());
+
   });
 
 });

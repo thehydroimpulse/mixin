@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 
-var _          = require('underscore');
+var _ = require('underscore');
 
 /**
  * Vars
@@ -116,6 +116,30 @@ function mixinProperties(mixinsMeta, mixin) {
   }
 }
 
+function findParent(obj, depth) {
+  if (!depth) depth = 0;
+  if (obj.parent) {
+    return findParent(obj.parent, depth++);
+  } else {
+    return {
+      parent: obj,
+      depth: depth
+    };
+  }
+}
+
+function findChild(obj, depth) {
+  if (!depth) depth = 0;
+  if (obj.child) {
+    return findChild(obj.child, depth++);
+  } else {
+    return {
+      child: obj,
+      depth: depth
+    };
+  }
+}
+
 /**
  * Concatenate Properties
  *
@@ -173,7 +197,37 @@ function concatenateProperties(mixins) {
         var value = props[key];
         if (props.hasOwnProperty(key)) {
           if ('function' === typeof value) {
-            console.log(value);
+
+            // Already has the same key in the chain
+            if (fnChain[key]) {
+
+              // Find the most child.
+              var obj = findChild(fnChain[key]);
+              var depth = obj.depth;
+              var child = obj.child;
+
+              if (!child.child) {
+                child.child = {
+                  obj: superMixin,
+                  mixin: superMixin.mixins[k],
+                  key: key,
+                  value: value,
+                  parent: obj,
+                  child: null
+                };
+              }
+
+            } else {
+              fnChain[key] = {
+                obj: superMixin,
+                mixin: superMixin.mixins[k],
+                key: key,
+                value: value,
+                parent: null,
+                child: null
+              };
+            }
+
           } else {
             values[key] = value;
             Object.defineProperty(superMixin, key, {
@@ -193,11 +247,34 @@ function concatenateProperties(mixins) {
   return values;
 }
 
+
+
 /**
  * Handle super
  */
 
-function handleSuper() {
+function handleSuper(fnChain, values) {
+
+  for (var key in fnChain) {
+    if (fnChain.hasOwnProperty(key)) {
+      var value = fnChain[key];
+
+      function _wrap(obj) {
+
+        if (obj.child) {
+          obj.value = wrapSuper(obj.child.value, obj.value);
+          return _wrap(obj.child);
+        } else {
+          return;
+        }
+      }
+
+      _wrap(value);
+
+      // Add this new fn to the values
+      values[key] = value.value;
+    }
+  }
 
 }
 
@@ -206,7 +283,19 @@ function handleSuper() {
  */
 
 function wrapSuper(func, superFunc) {
+  function K() {}
 
+  function superWrapper() {
+    var ret, sup = this._super;
+    this._super = superFunc || K;
+    ret = func.apply(this, arguments);
+    this._super = sup;
+    return ret;
+  }
+
+  superWrapper.wrappedFunction = func;
+
+  return superWrapper;
 }
 
 /**
@@ -214,7 +303,8 @@ function wrapSuper(func, superFunc) {
  */
 
 function applyMixin(obj, mixins, partial) {
-  var keys = [], values = {};
+  var keys = [],
+    values = {};
 
   return concatenateProperties(mixins);
 
@@ -229,12 +319,6 @@ function applyMixin(obj, mixins, partial) {
         var value = props[key];
         if (props.hasOwnProperty(key)) {
           values[key] = value;
-          Object.defineProperty(m, key, {
-            configurable: true,
-            enumerable: true,
-            value: value,
-            writable: true
-          });
         }
       }
     }
@@ -331,7 +415,9 @@ MixinPrototype.reopen = exports._reopen = function() {
     this.mixins = [];
   }
 
-  var len = arguments.length, mixins = this.mixins, idx;
+  var len = arguments.length,
+    mixins = this.mixins,
+    idx;
 
   for (idx = 0; idx < len; idx++) {
     mixin = arguments[idx];
