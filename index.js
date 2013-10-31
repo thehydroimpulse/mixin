@@ -176,10 +176,15 @@ function concatenateProperties(mixins) {
             console.log(value);
           } else {
             values[key] = value;
+            Object.defineProperty(superMixin, key, {
+              configurable: true,
+              enumerable: true,
+              value: value,
+              writable: true
+            });
           }
         }
       }
-
     }
   }
 

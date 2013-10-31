@@ -80,4 +80,14 @@ describe('mixin test', function() {
     assert.equal(p.name, 'Nick');
   });
 
+  it('should create an fnChain', function() {
+    var obj = Mixin.create({
+      name: function() {
+        return 123;
+      }
+    });
+
+    obj.apply();
+  });
+
 });
