@@ -114,4 +114,51 @@ describe('mixin test', function() {
     assert.equal('function', typeof obj.name);
     assert.equal(obj.name(), 'Super1 Super2 Super3');
   });
+
+  it('should prioritize the base class when applying the mixin', function() {
+
+    var Part = Mixin.create({
+      name: function() {
+        return 'First';
+      }
+    });
+
+    Part.reopen({
+      name: function() {
+        return 'Second';
+      }
+    });
+
+    var Machine = {
+      name: function() {
+        return 'Third';
+      }
+    };
+
+    Part.apply(Machine);
+
+    assert.equal('function', typeof Machine.name);
+    assert.equal(Machine.name(), 'Third');
+  });
+
+  it('should prioritize the reopen mixin', function() {
+
+    var Part = Mixin.create({
+      name: function() {
+        return 'Part';
+      }
+    });
+
+    Part.reopen({
+      name: function() {
+        return 'PartReopen';
+      }
+    });
+
+    var obj = Part.apply({});
+
+    assert.equal('function', typeof obj.name);
+    assert.equal(obj.name(), 'PartReopen');
+  });
+
 });
