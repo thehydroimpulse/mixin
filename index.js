@@ -59,9 +59,7 @@ Mixin.prototype.reopen = function() {
  */
 
 Mixin.prototype.apply = function(obj) {
-  if (obj instanceof Mixin) {
-    return this.applyMixin(obj);
-  } else if ('object' === typeof obj && !(obj instanceof Array)) {
+  if ('object' === typeof obj && !(obj instanceof Array)) {
     return this.applyObject(obj);
   }
 
@@ -69,39 +67,8 @@ Mixin.prototype.apply = function(obj) {
 };
 
 /**
- * ApplyMixin
- */
-
-Mixin.prototype.applyMixin = function(mixin) {
-
-};
-
-/**
- * Concatenate all the mixin properties in one array
- *
- *   [
- *     {
- *       prop1: 123
- *     }
- *   ]
- *
- */
-
-Mixin.prototype.concatMixins = function() {
-
-  for (var i = 0; i < this.mixins.length; i++) {
-    console.log(this.mixins[i]);
-  }
-
-};
-
-/**
  * Searching
  */
-
-function findParent() {
-
-}
 
 function findNextParent(obj, callback) {
 

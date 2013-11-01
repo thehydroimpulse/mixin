@@ -42,10 +42,9 @@ describe('mixin test', function() {
     }, Error);
   });
 
-  it('should have a `applyMixin` & `applyObject` function', function() {
+  it('should have a `applyObject` function', function() {
     var C = Mixin.create();
 
-    assert.equal('function', typeof C.applyMixin);
     assert.equal('function', typeof C.applyObject);
   });
 
