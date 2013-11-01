@@ -176,16 +176,6 @@ Mixin.prototype.handleFunctions = function(fns, target) {
     var parent = fns[key];
     var child = findChild(parent);
 
-    // We need to go from the top.
-    //
-    //  [
-    //    Super1 (parent) ** Start ** |
-    //    Super2                     <-
-    //    Super3                     <-
-    //    Super4                     <-
-    //  ]
-    //
-    //
     function next(object, parent) {
       object.val = Wrap(object.val, parent && parent.val);
 
