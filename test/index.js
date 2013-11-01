@@ -138,7 +138,7 @@ describe('mixin test', function() {
     Part.apply(Machine);
 
     assert.equal('function', typeof Machine.name);
-    assert.equal(Machine.name(), 'Third');
+    assert.equal(Machine.name(), 'Second');
   });
 
   it('should prioritize the reopen mixin', function() {
