@@ -23,16 +23,50 @@ exports.Meta = Meta;
 
 exports.create = function() {
   var C = new Mixin();
-  C.addMixins(Array.prototype.slice.call(arguments));
+  C.initMixin(Array.prototype.slice.call(arguments));
   return C;
 };
 
 /**
- * Mixin constructor
+ * Mixin Class.
+ *
+ * Each mixin will hold it's mixins, and it's properties.
+ *
  */
 
 function Mixin() {
   this.mixins = [];
+  this.properties = {};
+}
+
+/**
+ * Init Mixins
+ */
+
+Mixin.prototype.initMixin = function(args) {
+
+  for (var i = 0; i < args.length; i++) {
+    var arg = args[i];
+
+    if (arg instanceof Mixin) {
+      this.mixins.push(arg);
+      continue;
+    }
+
+    var mixin = new Mixin();
+    mixin.properties = arg;
+    this.mixins.push(mixin);
+  }
+
+  return this;
+};
+
+/**
+ * toString
+ */
+
+Mixin.toString = function() {
+  return '<Mixin>';
 }
 
 /**
@@ -41,7 +75,14 @@ function Mixin() {
 
 Mixin.prototype.addMixins = function(mixins) {
   for (var i = 0; i < mixins.length; i++) {
-    this.mixins.push(mixins[i]);
+    var mixin = mixins[i];
+    if (mixin instanceof Mixin) {
+      this.mixins.push(mixin);
+    } else if ('object' === typeof mixin && !(mixin instanceof Array)) {
+      var M = new Mixin();
+      M.properties = mixin;
+      this.mixins.push(M);
+    }
   }
 };
 
@@ -59,7 +100,7 @@ Mixin.prototype.reopen = function() {
  */
 
 Mixin.prototype.apply = function(obj) {
-  if ('object' === typeof obj && !(obj instanceof Array)) {
+  if (('object' === typeof obj || 'function' === typeof obj) && !(obj instanceof Array)) {
     return this.applyObject(obj);
   }
 
@@ -67,7 +108,19 @@ Mixin.prototype.apply = function(obj) {
 };
 
 /**
- * Searching
+ * Expose `apply`
+ */
+
+exports.apply = Mixin.prototype.apply;
+
+/**
+ * Expose `reopen`
+ */
+
+exports.reopen = Mixin.prototype.reopen;
+
+/**
+ * findNextParent
  */
 
 function findNextParent(obj, callback) {
@@ -84,6 +137,10 @@ function findNextParent(obj, callback) {
   return nextParent(obj);
 }
 
+/**
+ * findChild
+ */
+
 function findChild(obj) {
   if (obj.child) {
     return findChild(obj.child);
@@ -96,36 +153,48 @@ function findChild(obj) {
  */
 
 Mixin.prototype.applyObject = function(object) {
-  var source = this;
   var target = object;
   var fns = {};
+  var values = {};
 
   for (var i = 0; i < this.mixins.length; i++) {
     var mixin = this.mixins[i];
-    for (var key in mixin) {
-      var val = mixin[key];
+    var props = mixin.properties;
+
+    for (var key in props) {
+      var val = props[key];
+
       if ('function' === typeof val) {
-        if (!fns[key]) {
-          fns[key] = {
-            val: val,
-            child: null,
-            parent: null
-          };
+
+        if (values[key]) {
+          // The object already has the key. We'll need to setup a
+          // prototype around it.
+          var parent = values[key];
+          values[key] = Wrap(val, parent);
+
         } else {
-          var obj = findChild(fns[key]);
-          obj.child = {
-            val: val,
-            child: null,
-            parent: obj
-          };
+          // If the target (base class/object) doesn't have the key
+          // then we'll just take it.
+          values[key] = val;
         }
+
       } else {
-        target[key] = val;
+        values[key] = val;
       }
+
     }
+
   }
 
-  this.handleFunctions(fns, target);
+  for (var key in values) {
+    var val = values[key];
+    if (target[key] && 'function' === typeof target[key]
+        && 'function' === typeof val) {
+      target[key] = Wrap(target[key], val);
+    } else {
+      target[key] = val;
+    }
+  }
 
   return target;
 };
