@@ -161,4 +161,22 @@ describe('mixin test', function() {
     assert.equal(obj.name(), 'PartReopen');
   });
 
+  it('should add a mixin instance.', function() {
+
+    var Engine = Mixin.create({
+      engineSize: 8,
+      engineType: 'awesome'
+    });
+
+    var Car = Mixin.create({
+      carWeight: 200
+    });
+
+    Car.reopen(Engine);
+
+    var car = Car.apply({});
+
+    assert.equal(Object.keys(car).length, 3);
+  });
+
 });

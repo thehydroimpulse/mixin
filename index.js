@@ -50,15 +50,13 @@ Mixin.prototype.initMixin = function(args) {
 
     if (arg instanceof Mixin) {
       this.mixins.push(arg);
-      continue;
+    } else {
+      var mixin = new Mixin();
+      mixin.properties = arg;
+      this.mixins.push(mixin);
     }
-
-    var mixin = new Mixin();
-    mixin.properties = arg;
-    this.mixins.push(mixin);
   }
 
-  return this;
 };
 
 /**
@@ -74,8 +72,10 @@ Mixin.toString = function() {
  */
 
 Mixin.prototype.addMixins = function(mixins) {
+  console.log(this.mixins);
   for (var i = 0; i < mixins.length; i++) {
     var mixin = mixins[i];
+
     if (mixin instanceof Mixin) {
       this.mixins.push(mixin);
     } else if ('object' === typeof mixin && !(mixin instanceof Array)) {
@@ -83,6 +83,7 @@ Mixin.prototype.addMixins = function(mixins) {
       M.properties = mixin;
       this.mixins.push(M);
     }
+
   }
 };
 
@@ -91,7 +92,17 @@ Mixin.prototype.addMixins = function(mixins) {
  */
 
 Mixin.prototype.reopen = function() {
-  this.addMixins(Array.prototype.slice.call(arguments));
+
+  /**if (this.properties) {
+    var mixin = new Mixin();
+    mixin.properties = this.properties;
+    delete this.properties;
+    this.mixins = [mixin];
+  } else if (!this.mixins) {
+    this.mixins = [];
+  }**/
+  this.initMixin(Array.prototype.slice.call(arguments));
+  //this.addMixins(Array.prototype.slice.call(arguments));
   return this;
 };
 
@@ -159,37 +170,58 @@ Mixin.prototype.applyObject = function(object) {
 
   for (var i = 0; i < this.mixins.length; i++) {
     var mixin = this.mixins[i];
-    var props = mixin.properties;
 
-    for (var key in props) {
-      var val = props[key];
-
-      if ('function' === typeof val) {
-
-        if (values[key]) {
-          // The object already has the key. We'll need to setup a
-          // prototype around it.
-          var parent = values[key];
-          values[key] = Wrap(val, parent);
-
+    if (mixin.properties) {
+      for (var key in mixin.properties) {
+        var val = mixin.properties[key];
+        if ('function' === typeof val) {
+          if (values[key]) {
+            // The object already has the key. We'll need to setup a
+            // prototype around it.
+            var parent = values[key];
+            values[key] = Wrap(val, parent);
+          } else {
+            // If the target (base class/object) doesn't have the key
+            // then we'll just take it.
+            values[key] = val;
+          }
         } else {
-          // If the target (base class/object) doesn't have the key
-          // then we'll just take it.
           values[key] = val;
         }
-
-      } else {
-        values[key] = val;
       }
+    }
 
+    for (var j = 0; j < mixin.mixins.length; j++) {
+      var props = mixin.mixins[j].properties;
+
+      for (var key in props) {
+        var val = props[key];
+
+        if ('function' === typeof val) {
+
+          if (values[key]) {
+            // The object already has the key. We'll need to setup a
+            // prototype around it.
+            var parent = values[key];
+            values[key] = Wrap(val, parent);
+
+          } else {
+            // If the target (base class/object) doesn't have the key
+            // then we'll just take it.
+            values[key] = val;
+          }
+
+        } else {
+          values[key] = val;
+        }
+      }
     }
 
   }
 
   for (var key in values) {
     var val = values[key];
-    if (target[key] && 'function' === typeof target[key]
-        && 'function' === typeof val) {
+    if (target[key] && 'function' === typeof target[key] && 'function' === typeof val) {
       target[key] = Wrap(target[key], val);
     } else {
       target[key] = val;
