@@ -2,8 +2,8 @@
  * Module dependencies.
  */
 
-var _       = require('underscore');
-var Meta    = require('./lib/meta');
+var Meta = require('./lib/meta');
+var Wrap = require('super-wrap');
 
 /**
  * Module exports
@@ -46,13 +46,22 @@ Mixin.prototype.addMixins = function(mixins) {
 };
 
 /**
+ * Reopen
+ */
+
+Mixin.prototype.reopen = function() {
+  this.addMixins(Array.prototype.slice.call(arguments));
+  return this;
+};
+
+/**
  * Apply
  */
 
 Mixin.prototype.apply = function(obj) {
   if (obj instanceof Mixin) {
     return this.applyMixin(obj);
-  } else if ('object' === typeof obj && !(obj instanceof Array)){
+  } else if ('object' === typeof obj && !(obj instanceof Array)) {
     return this.applyObject(obj);
   }
 
@@ -87,23 +96,61 @@ Mixin.prototype.concatMixins = function() {
 };
 
 /**
+ * Searching
+ */
+
+function findParent() {
+
+}
+
+function findNextParent(obj, callback) {
+
+  function nextParent(object) {
+    if (object.parent) {
+      var ret = callback(object);
+      if (ret) {
+        return nextParent(object.parent);
+      }
+    }
+  }
+
+  return nextParent(obj);
+}
+
+function findChild(obj) {
+  if (obj.child) {
+    return findChild(obj.child);
+  }
+  return obj;
+}
+
+/**
  * ApplyObject
  */
 
 Mixin.prototype.applyObject = function(object) {
   var source = this;
   var target = object;
-  var fns    = {};
+  var fns = {};
 
-  for (var i = this.mixins.length; i > 0; i--) {
-    var mixin = this.mixins[i-1];
+  for (var i = 0; i < this.mixins.length; i++) {
+    var mixin = this.mixins[i];
     for (var key in mixin) {
       var val = mixin[key];
       if ('function' === typeof val) {
         if (!fns[key]) {
-          fns[key] = [val];
+          fns[key] = {
+            val: val,
+            child: null,
+            parent: null
+          };
         } else {
-          fns[key].push(val);
+          var obj = findChild(fns[key]);
+          obj.child = {
+            val: val,
+            child: null,
+            parent: obj
+          };
         }
       } else {
         target[key] = val;
@@ -112,6 +159,8 @@ Mixin.prototype.applyObject = function(object) {
   }
 
   this.handleFunctions(fns, target);
+
+  return target;
 };
 
 /**
@@ -124,13 +173,29 @@ Mixin.prototype.applyObject = function(object) {
 Mixin.prototype.handleFunctions = function(fns, target) {
 
   for (var key in fns) {
-    var arr = fns[key];
+    var parent = fns[key];
+    var child = findChild(parent);
 
-    // Go in the opposite order
-    for (var i = arr.length; i > 0; i--) {
-      var fn = arr[i-1];
-      console.log(fn);
+    // We need to go from the top.
+    //
+    //  [
+    //    Super1 (parent) ** Start ** |
+    //    Super2                     <-
+    //    Super3                     <-
+    //    Super4                     <-
+    //  ]
+    //
+    //
+    function next(object, parent) {
+      object.val = Wrap(object.val, parent && parent.val);
+
+      if (object.child) {
+        return next(object.child, object);
+      }
     }
+
+    next(parent);
+    target[key] = child.val;
   }
 
 };

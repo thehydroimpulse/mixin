@@ -59,11 +59,60 @@ describe('mixin test', function() {
     var obj = { name: 123 };
     var C   = Mixin.create({
       age: function() {
-
+        return 123;
       }
     });
 
     C.apply(obj);
+
+    assert.equal('function', typeof obj.age);
+    assert.equal(obj.age(), 123);
   });
 
+  it('should inherit parent mixin function', function() {
+    var Person = Mixin.create({
+      name: function() {
+        return 'John'
+      }
+    });
+
+    Person.reopen({
+      name: function() {
+        return this._super() + ' Dave';
+      }
+    });
+
+    var obj = {};
+    Person.apply(obj);
+
+    assert.equal(Object.keys(obj).length, 1);
+    assert.equal(obj.name(), 'John Dave');
+  });
+
+  it('should inherit from 2 parents', function() {
+
+    var Person = Mixin.create({
+      name: function() {
+        return 'Super1';
+      }
+    });
+
+    Person.reopen({
+      name: function() {
+        return this._super() + ' Super2';
+      }
+    });
+
+    Person.reopen({
+      name: function() {
+        return this._super() + ' Super3';
+      }
+    });
+
+    var obj = Person.apply({});
+
+    assert.equal(Object.keys(obj).length, 1);
+    assert.equal('function', typeof obj.name);
+    assert.equal(obj.name(), 'Super1 Super2 Super3');
+  });
 });
