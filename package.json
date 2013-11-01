@@ -24,6 +24,6 @@
     "url": "https://github.com/TheHydroImpulse/mixin"
   },
   "dependencies": {
-    "underscore": "~1.5.2"
+    "super-wrap": "*"
   }
 }

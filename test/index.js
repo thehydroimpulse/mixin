@@ -8,116 +8,62 @@ describe('mixin test', function() {
     assert.equal('function', typeof Mixin);
   });
 
-  it('should create a new Mixin', function() {
-    var m = Mixin.create({
-      hello: 123,
-      world: function() {}
-    });
-
-    assert.equal('object', typeof m);
-    assert(m instanceof Mixin);
+  it('should create a new instance', function() {
+    var C = Mixin.create();
+    assert(C instanceof Mixin);
   });
 
-  it('should reopen a mixin', function() {
-    var m = Mixin.create({
-      world: 123
-    });
-
-    assert.equal(m.mixins[0].properties.world, 123);
-
-    m.reopen({
-      two: 123
-    });
-
-    assert.equal(m.mixins.length, 2);
-    assert.equal(m.mixins[1].properties.two, 123);
+  it('should add mixins when creating instance', function() {
+    var C = Mixin.create({});
+    assert(C.mixins.length === 1);
   });
 
-  it('should get a property', function() {
-    var person = Mixin.create({
-      name: 'Joe'
-    });
+  it('should throw error when applying an array', function() {
+    var C = Mixin.create();
 
-    assert.equal('Joe', person.get('name'));
+    // Array
+    assert.throws(function() {
+      C.apply([]);
+    }, Error);
+
+    // Undefined
+    assert.throws(function() {
+      C.apply();
+    }, Error);
+
+    // String
+    assert.throws(function() {
+      C.apply("");
+    }, Error);
+
+    // Number
+    assert.throws(function() {
+      C.apply(123);
+    }, Error);
   });
 
-  it('should set a property', function() {
-    var person = Mixin.create({
-      name: 'Joe'
-    });
+  it('should have a `applyMixin` & `applyObject` function', function() {
+    var C = Mixin.create();
 
-    assert.equal('Joe', person.get('name'));
-    person.set('name', 'Two');
-    assert.equal('Two', person.get('name'));
+    assert.equal('function', typeof C.applyMixin);
+    assert.equal('function', typeof C.applyObject);
   });
 
-  it('should overwrite property', function() {
-
-    var person = Mixin.create({
-      name: 'Joe'
-    });
-
-    person.reopen({
-      name: 'Chang'
-    });
-
-    assert.equal('Chang', person.get('name'));
+  it('should add a meta property', function() {
+    var obj = {};
+    Mixin.Meta(obj);
+    assert('undefined' !== typeof obj._meta);
   });
 
-  it('should apply the mixin', function() {
+  it('should apply an object', function() {
+    var obj = { name: 123 };
+    var C   = Mixin.create({
+      age: function() {
 
-    var person = Mixin.create({
-      name: 'John'
-    });
-
-    person.reopen({
-      name: 'Nick'
-    });
-
-    var p = person.apply();
-
-    assert.equal(Object.keys(p).length, 1);
-    assert.equal(p.name, 'Nick');
-  });
-
-  it('should create an fnChain', function() {
-    var obj = Mixin.create({
-      name: function() {
-        return 123;
       }
     });
 
-    var p = obj.apply();
-    assert.equal(p.name(), 123);
-  });
-
-  it('should inherit from another Mixin', function() {
-
-    var parent = Mixin.create({
-      name: function() {
-        return 'John';
-      }
-    });
-
-    parent.reopen({
-      name: function() {
-        return this._super() + ' Dave';
-      }
-    });
-
-    var p = parent.apply();
-
-    assert.equal(p.name(), 'John Dave');
-  });
-
-  it('should define the properties on the Mixin instance.', function() {
-    var Person = Mixin.create({
-      name: 'Dave'
-    });
-
-    Person.apply();
-
-    assert.equal(Person.name, 'Dave');
+    C.apply(obj);
   });
 
 });

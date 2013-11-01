@@ -2,13 +2,8 @@
  * Module dependencies.
  */
 
-var _ = require('underscore');
-
-/**
- * Vars
- */
-
-var MixinPrototype;
+var _       = require('underscore');
+var Meta    = require('./lib/meta');
 
 /**
  * Module exports
@@ -17,356 +12,125 @@ var MixinPrototype;
 exports = module.exports = Mixin;
 
 /**
- * Collection
+ * Expose `Meta`
  */
 
-exports.collection = [];
-
-/**
- * Expose `initMixin`
- */
-
-exports.initMixin = initMixin;
-
-/**
- * Expose `applyMixin`
- */
-
-exports.applyMixin = applyMixin;
-
-/**
- * initMixin
- */
-
-function initMixin(mixin, args) {
-  if (args && args.length > 0) {
-    mixin.mixins = _.map(args, function(x) {
-      if (x instanceof Mixin) {
-        return x;
-      }
-
-      var mixin = new Mixin();
-      mixin.properties = x;
-      return mixin;
-    });
-  }
-
-  return mixin;
-}
-
-/**
- * Apply Mixin
- */
-
-function applyMixin(obj, mixins, partial) {
-  var keys = [],
-    values = {};
-
-  //MixinPrototype.reopen.apply(mixins[0], obj);
-  var props = concatenateProperties(mixins);
-
-  if (obj) {
-    for(var key in props) {
-      if (props.hasOwnProperty(key)) {
-        obj[key] = props[key];
-      }
-    }
-  }
-
-  return props;
-}
-
-function findParent(obj, depth) {
-  if (!depth) depth = 0;
-  if (obj.parent) {
-    return findParent(obj.parent, depth++);
-  } else {
-    return {
-      parent: obj,
-      depth: depth
-    };
-  }
-}
-
-function findChild(obj, depth) {
-  if (!depth) depth = 0;
-  if (obj.child) {
-    return findChild(obj.child, depth++);
-  } else {
-    return {
-      child: obj,
-      depth: depth
-    };
-  }
-}
-
-/**
- * Concatenate Properties
- *
- * This will take a Mixin, with all it's own mixins and properties.
- *
- *  * Go through each mixin and create a chain of properties. i.e If there
- *    multiples of the same property key, then we'll chain them in order.
- *    Which means, the first mixin will always be the most parent,
- *    and the latest mixin will be the most child.
- *
- *    PropertyChains:
- *    {
- *      "name": [
- *        {
- *          mixin: mixin0
- *          value: function() {}             [1]
- *          parent: null                      |
- *          children: mixin1                  |
- *        },                                  |
- *        {                                   |
- *          mixin: mixin1                     |
- *          value: function() {}              |
- *          parent: mixin0                   [2]
- *          children: mixin2                  |
- *        },                                  |
- *        {                                   |
- *          mixin: mixin2                     |
- *          value: function() {}             [3]
- *          parent: mixin1                    |
- *        }                                   -
- *
- *      ]
- *
- *    }
- *
- *  * Go through the chain and wrap each function to manage
- *    the `_super` function properly.
- *  * Merge primitive values (i.e non-functions) correctly. Right now
- *    we'll just plainly keep the newest values.
- *
- */
-
-function concatenateProperties(mixins) {
-  var fnChain = {}, values = {};
-
-  // Go through each super mixin.
-  for (var i = mixins.length; i > 0; i--) {
-    var superMixin = mixins[i-1];
-
-    // Loop through each mixin.
-    for (var k = 0; k < superMixin.mixins.length; k++) {
-      var props = superMixin.mixins[k].properties;
-
-      for (var key in props) {
-        var value = props[key];
-        if (props.hasOwnProperty(key)) {
-          if ('function' === typeof value) {
-
-            // Already has the same key in the chain
-            if (fnChain[key]) {
-              // Find the most child.
-              var obj = findChild(fnChain[key]);
-              var depth = obj.depth;
-              var child = obj.child;
-
-              if (!child.child) {
-                child.child = {
-                  obj: superMixin,
-                  mixin: superMixin.mixins[k],
-                  key: key,
-                  value: value,
-                  parent: obj,
-                  child: null
-                };
-              }
-
-            } else {
-              fnChain[key] = {
-                obj: superMixin,
-                mixin: superMixin.mixins[k],
-                key: key,
-                value: value,
-                parent: null,
-                child: null
-              };
-            }
-
-          } else {
-            values[key] = value;
-            /**Object.defineProperty(superMixin, key, {
-              configurable: true,
-              enumerable: true,
-              value: value,
-              writable: true
-            });**/
-            superMixin[key] = value;
-          }
-        }
-      }
-    }
-  }
-
-  handleSuper(fnChain, values);
-
-  return values;
-}
-
-
-
-/**
- * Handle super
- */
-
-function handleSuper(fnChain, values) {
-
-  for (var key in fnChain) {
-    if (fnChain.hasOwnProperty(key)) {
-      var value = fnChain[key];
-
-      function _wrap(obj, parent) {
-        if (parent) {
-          obj.value = wrapSuper(obj.value);
-          return _wrap(obj);
-        }
-
-        if (obj.child) {
-          obj.value = wrapSuper(obj.child.value, obj.value);
-          return _wrap(obj.child);
-        } else {
-          return;
-        }
-      }
-
-      _wrap(value, true);
-
-      // Add this new fn to the values
-      values[key] = value.value;
-    }
-  }
-
-}
-
-/**
- * Wrap Super
- */
-
-function wrapSuper(func, superFunc) {
-  function K() {}
-
-  function superWrapper() {
-    var ret, sup = this._super;
-    this._super = superFunc || K;
-    ret = func.apply(this, arguments);
-    this._super = sup;
-    return ret;
-  }
-
-  superWrapper.wrappedFunction = func;
-
-  return superWrapper;
-}
-
-/**
- * Mixin
- */
-
-function Mixin() {
-  return initMixin(this, arguments);
-}
-
-/**
- * Prototype
- */
-
-Mixin.prototype = {
-  properties: null,
-  mixins: null,
-  ownerConstructor: null
-};
-
-/**
- * Apply
- */
-
-Mixin._apply = applyMixin;
+exports.Meta = Meta;
 
 /**
  * Create
  */
 
-Mixin.create = function() {
-  var M = this;
-  return initMixin(new M(), arguments);
+exports.create = function() {
+  var C = new Mixin();
+  C.addMixins(Array.prototype.slice.call(arguments));
+  return C;
 };
 
 /**
- * Prototype
+ * Mixin constructor
  */
 
-MixinPrototype = Mixin.prototype;
+function Mixin() {
+  this.mixins = [];
+}
 
 /**
- * Get
+ * AddMixins
  */
 
-MixinPrototype.get = function(key) {
-  for (var i = this.mixins.length; i > 0; i--) {
-    if (this.mixins[i - 1].properties.hasOwnProperty(key)) {
-      return this.mixins[i - 1].properties[key];
-    }
+Mixin.prototype.addMixins = function(mixins) {
+  for (var i = 0; i < mixins.length; i++) {
+    this.mixins.push(mixins[i]);
   }
 };
-
-/**
- * Set
- */
-
-MixinPrototype.set = function(key, value) {
-  for (var i = this.mixins.length; i > 0; i--) {
-    if (this.mixins[i - 1].properties.hasOwnProperty(key)) {
-      return this.mixins[i - 1].properties[key] = value;
-    }
-  }
-};
-
 
 /**
  * Apply
  */
 
-MixinPrototype.apply = function(obj) {
-  return applyMixin(obj, [this], false);
+Mixin.prototype.apply = function(obj) {
+  if (obj instanceof Mixin) {
+    return this.applyMixin(obj);
+  } else if ('object' === typeof obj && !(obj instanceof Array)){
+    return this.applyObject(obj);
+  }
+
+  throw new Error("Argument passed to Mixin.apply has to be a mixin instance or an object.");
 };
 
 /**
- * Reopen
+ * ApplyMixin
  */
 
-MixinPrototype.reopen = exports._reopen = function() {
-  var mixin, tmp;
+Mixin.prototype.applyMixin = function(mixin) {
 
-  if (this.properties) {
-    mixin = Mixin.create();
-    mixin.properties = this.properties;
-    delete this.properties;
-    this.mixins = [mixin];
-  } else if (!this.mixins) {
-    this.mixins = [];
+};
+
+/**
+ * Concatenate all the mixin properties in one array
+ *
+ *   [
+ *     {
+ *       prop1: 123
+ *     }
+ *   ]
+ *
+ */
+
+Mixin.prototype.concatMixins = function() {
+
+  for (var i = 0; i < this.mixins.length; i++) {
+    console.log(this.mixins[i]);
   }
 
-  var len = arguments.length,
-    mixins = this.mixins,
-    idx;
+};
 
-  for (idx = 0; idx < len; idx++) {
-    mixin = arguments[idx];
+/**
+ * ApplyObject
+ */
 
-    if (typeof mixin === 'object' && mixin !== null && Object.prototype.toString.call(mixin) !== '[object Array]') {
-      if (mixin instanceof Mixin) {
-        mixins.push(mixin);
+Mixin.prototype.applyObject = function(object) {
+  var source = this;
+  var target = object;
+  var fns    = {};
+
+  for (var i = this.mixins.length; i > 0; i--) {
+    var mixin = this.mixins[i-1];
+    for (var key in mixin) {
+      var val = mixin[key];
+      if ('function' === typeof val) {
+        if (!fns[key]) {
+          fns[key] = [val];
+        } else {
+          fns[key].push(val);
+        }
       } else {
-        tmp = Mixin.create();
-        tmp.properties = mixin;
-        this.mixins.push(tmp);
+        target[key] = val;
       }
     }
   }
 
-  return this;
+  this.handleFunctions(fns, target);
+};
+
+/**
+ * HandleFunctions
+ *
+ * This will setup the _super chain. The smallest indexes will be the latest
+ * Mixins. Thus, the smaller indexes will be the children.
+ */
+
+Mixin.prototype.handleFunctions = function(fns, target) {
+
+  for (var key in fns) {
+    var arr = fns[key];
+
+    // Go in the opposite order
+    for (var i = arr.length; i > 0; i--) {
+      var fn = arr[i-1];
+      console.log(fn);
+    }
+  }
+
 };
