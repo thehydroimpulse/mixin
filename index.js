@@ -55,64 +55,25 @@ function initMixin(mixin, args) {
 }
 
 /**
- * Merge Mixins
+ * Apply Mixin
  */
 
-function mergeMixins(mixins, m, descs, values, base, keys) {
-  var mixin, props, key, concats, mergings, meta;
+function applyMixin(obj, mixins, partial) {
+  var keys = [],
+    values = {};
 
-  function removeKeys(keyName) {
-    delete descs[keyName];
-    delete values[keyName];
-  }
+  //MixinPrototype.reopen.apply(mixins[0], obj);
+  var props = concatenateProperties(mixins);
 
-  for (var i = 0, n = mixins.length; i < n; i++) {
-    mixin = mixins[i];
-
-    props = mixinProperties(m, mixin);
-    if (props) {
-      concats = concatenatedMixinProperties('concatenatedProperties', props, values, base);
-      mergings = concatenatedMixinProperties('mergedProperties', props, values, base);
-
-      for (key in props) {
-        if (!props.hasOwnProperty(key)) {
-          continue;
-        }
-
-        keys.push(key);
+  if (obj) {
+    for(var key in props) {
+      if (props.hasOwnProperty(key)) {
+        obj[key] = props[key];
       }
     }
   }
 
-}
-
-/**
- * concatenatedMixinProperties
- */
-
-function concatenatedMixinProperties(concatProp, props, values, base) {
-  var concats;
-
-  concats = values[concatProp] || base[concatProp];
-  if (props[concatProp]) {
-    concats = concats ? concats.concat(props[concatProp]) : props[concatProp];
-  }
-
-  return concats;
-}
-
-/**
- * Mixin Properties
- */
-
-function mixinProperties(mixinsMeta, mixin) {
-  var guid;
-
-  if (mixin instanceof Mixin) {
-    return mixin.properties;
-  } else {
-    return mixin;
-  }
+  return props;
 }
 
 function findParent(obj, depth) {
@@ -185,8 +146,8 @@ function concatenateProperties(mixins) {
   var fnChain = {}, values = {};
 
   // Go through each super mixin.
-  for (var i = 0; i < mixins.length; i++) {
-    var superMixin = mixins[i];
+  for (var i = mixins.length; i > 0; i--) {
+    var superMixin = mixins[i-1];
 
     // Loop through each mixin.
     for (var k = 0; k < superMixin.mixins.length; k++) {
@@ -199,7 +160,6 @@ function concatenateProperties(mixins) {
 
             // Already has the same key in the chain
             if (fnChain[key]) {
-
               // Find the most child.
               var obj = findChild(fnChain[key]);
               var depth = obj.depth;
@@ -229,12 +189,13 @@ function concatenateProperties(mixins) {
 
           } else {
             values[key] = value;
-            Object.defineProperty(superMixin, key, {
+            /**Object.defineProperty(superMixin, key, {
               configurable: true,
               enumerable: true,
               value: value,
               writable: true
-            });
+            });**/
+            superMixin[key] = value;
           }
         }
       }
@@ -299,28 +260,6 @@ function wrapSuper(func, superFunc) {
   superWrapper.wrappedFunction = func;
 
   return superWrapper;
-}
-
-/**
- * Apply Mixin
- */
-
-function applyMixin(obj, mixins, partial) {
-  var keys = [],
-    values = {};
-
-  //MixinPrototype.reopen.apply(mixins[0], obj);
-  var props = concatenateProperties(mixins);
-
-  if (obj) {
-    for(var key in props) {
-      if (props.hasOwnProperty(key)) {
-        obj[key] = props[key];
-      }
-    }
-  }
-
-  return props;
 }
 
 /**
@@ -424,11 +363,10 @@ MixinPrototype.reopen = exports._reopen = function() {
       } else {
         tmp = Mixin.create();
         tmp.properties = mixin;
-        mixins.push(tmp);
+        this.mixins.push(tmp);
       }
     }
-
-    return this;
   }
 
+  return this;
 };
