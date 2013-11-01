@@ -36,14 +36,12 @@ var Person = Mixin.create({
 });
 ```
 
-To fetch the properties, simply call `instance.apply()`:
+To mix the Mixin into another object, simply call apply:
 
 ```js
-var person = Person.apply();
+var person = Person.apply({});
 console.log(person); // { name: 'Dave', age: 99, country: 'Canada' }
 ```
-
-This will merge the mixins, and handle parent - child functions.
 
 ### Inherit
 
@@ -58,7 +56,7 @@ var Item = Mixin.create(Body, {
   colour: 'Red'
 });
 
-Item.apply(); // { shape: 'square', colour: 'Red' }
+Item.apply({}); // { shape: 'square', colour: 'Red' }
 ```
 
 **Parent Method:**
@@ -77,7 +75,8 @@ Person.reopen({
   }
 });
 
-var person = Person.apply();
+var person = {};
+Person.apply(person);
 person.name(); // "John Smith"
 ```
 
@@ -96,7 +95,7 @@ Person.reopen({
   age: 56
 });
 
-Person.apply(); // { age: 56, name: 'Dave' }
+Person.apply({}); // { age: 56, name: 'Dave' }
 ```
 
 ## API
