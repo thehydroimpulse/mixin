@@ -179,4 +179,28 @@ describe('mixin test', function() {
     assert.equal(Object.keys(car).length, 3);
   });
 
+  it('should mixin multiple Mixins', function() {
+
+    var Mix1 = Mixin.create({
+      mixin1: true
+    });
+
+    var Mix2 = Mixin.create({
+      mixin2: true
+    });
+
+    var Mix3 = Mixin.create({
+      mixin3: true
+    });
+
+    Mix3.reopen(Mix2, Mix1);
+
+    var obj = Mix3.apply({});
+
+    assert.equal(Object.keys(obj).length, 3);
+    assert.equal(obj.mixin3, true);
+    assert.equal(obj.mixin2, true);
+    assert.equal(obj.mixin1, true);
+  });
+
 });
