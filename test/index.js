@@ -270,6 +270,43 @@ describe('mixin test', function() {
       equal(cnt, 1);
     });
 
+    it('should run once if including the same mixin', function() {
+      var cnt = 0;
+      var MixinA = Mixin.create({
+        foo: function() {
+          cnt++;
+        }
+      });
+
+      var MixinB = Mixin.create(MixinA, {
+        foo: function() {
+          this._super();
+        }
+      });
+
+      var MixinC = Mixin.create(MixinA, {
+        foo: function() {
+          this._super();
+        }
+      });
+
+      var MixinD = Mixin.create(MixinB, MixinC, MixinA, {
+        foo: function() {
+          this._super();
+        }
+      });
+
+      var obj = {};
+      MixinD.apply(obj);
+      MixinA.apply(obj);
+
+      cnt = 0;
+      obj.foo();
+
+      equal(cnt, 1);
+
+    });
+
   });
 
 });
