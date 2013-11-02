@@ -226,6 +226,20 @@ describe('mixin test', function() {
       equal(obj.foo, 'FOO');
       equal(obj.baz, K);
     });
+
+    it('should apply null values', function() {
+      assert.throws(function() {
+        Mixin.mixin({}, null);
+      });
+    });
+
+    it('should apply property with an undefined value', function() {
+      var obj = { tagName: '' };
+      Mixin.mixin(obj, { tagName: undefined });
+
+      assert.deepEqual(obj, { tagName: undefined });
+    });
+
   });
 
 });
