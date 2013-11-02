@@ -240,6 +240,36 @@ describe('mixin test', function() {
       assert.deepEqual(obj, { tagName: undefined });
     });
 
+    it('should override inherited objects', function() {
+
+      var cnt = 0;
+      var MixinA = Mixin.create({
+        foo: function() {
+          cnt++;
+        }
+      });
+
+      var MixinB = Mixin.create({
+        foo: function() {
+          this._super(); cnt++;
+        }
+      });
+
+      var objA = {};
+      MixinA.apply(objA);
+
+      var objB = Object.create(objA);
+      MixinB.apply(objB);
+
+      cnt = 0;
+      objB.foo();
+      equal(cnt, 2);
+
+      cnt = 0;
+      objA.foo();
+      equal(cnt, 1);
+    });
+
   });
 
 });
