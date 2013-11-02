@@ -28,6 +28,28 @@ exports.create = function() {
 };
 
 /**
+ * Apply
+ */
+
+exports._apply = function(obj, mixins) {
+  if (('object' === typeof obj || 'function' === typeof obj) && !(obj instanceof Array)) {
+    return Mixin.prototype.applyObject(this, obj);
+  }
+
+  throw new Error("Argument passed to Mixin.apply has to be a mixin instance or an object.");
+};
+
+/**
+ * Mixin
+ */
+
+exports.mixin = function(obj) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  Mixin.prototype.applyObject(args, obj);
+  return obj;
+};
+
+/**
  * Mixin Class.
  *
  * Each mixin will hold it's mixins, and it's properties.
@@ -93,7 +115,7 @@ Mixin.prototype.reopen = function() {
 
 Mixin.prototype.apply = function(obj) {
   if (('object' === typeof obj || 'function' === typeof obj) && !(obj instanceof Array)) {
-    return this.applyObject(obj);
+    return Mixin.prototype.applyObject(this, obj);
   }
 
   throw new Error("Argument passed to Mixin.apply has to be a mixin instance or an object.");
@@ -144,70 +166,55 @@ function findChild(obj) {
  * ApplyObject
  */
 
-Mixin.prototype.applyObject = function(object) {
-  var target = object;
+Mixin.prototype.applyObject = function(obj, target) {
   var fns = {};
   var values = target;
 
-  for (var i = 0; i < this.mixins.length; i++) {
-    var mixin = this.mixins[i];
-
-    for (var j = 0; j < mixin.mixins.length; j++) {
-      var props = mixin.mixins[j].properties;
-
-      for (var key in props) {
-        var val = props[key];
-
-        if ('function' === typeof val) {
-
-          if (values[key]) {
-            // The object already has the key. We'll need to setup a
-            // prototype around it.
-            var parent = values[key];
-            values[key] = Wrap(val, parent);
-
-          } else {
-            // If the target (base class/object) doesn't have the key
-            // then we'll just take it.
-            values[key] = val;
-          }
-
-        } else {
-          values[key] = val;
-        }
-      }
+  function applyProperties(props) {
+    if (!props) {
+      throw new Error("No properties found.");
     }
 
-    if (mixin.properties) {
-      for (var key in mixin.properties) {
-        var val = mixin.properties[key];
-        if ('function' === typeof val) {
-          if (values[key]) {
-            // The object already has the key. We'll need to setup a
-            // prototype around it.
-            var parent = values[key];
-            values[key] = Wrap(val, parent);
-          } else {
-            // If the target (base class/object) doesn't have the key
-            // then we'll just take it.
-            values[key] = val;
-          }
+    for (var key in props) {
+      var val = props[key];
+      if ('function' === typeof val) {
+        if (values[key]) {
+          // The object already has the key. We'll need to setup a
+          // prototype around it.
+          var parent = values[key];
+          values[key] = Wrap(val, parent);
         } else {
+          // If the target (base class/object) doesn't have the key
+          // then we'll just take it.
           values[key] = val;
         }
+      } else {
+        values[key] = val;
       }
     }
   }
 
-  /**for (var key in values) {
-    var val = values[key];
-    if (target[key] && 'function' === typeof target[key] && 'function' === typeof val) {
-      target[key] = Wrap(target[key], val);
-    } else {
-      target[key] = val;
-    }
-  }**/
+  function applyMixins(mixin) {
+    for (var j = 0; j < mixin.mixins.length; j++) {
+      var props = mixin.mixins[j].properties;
 
+      applyProperties(props);
+    }
+  }
+
+  if (obj instanceof Mixin) {
+    for (var i = 0; i < obj.mixins.length; i++) {
+      var mixin = obj.mixins[i];
+      applyMixins(mixin);
+      applyProperties(mixin.properties);
+    }
+  } else if ('object' === typeof obj && !(obj instanceof Array)) {
+    applyProperties(target);
+  } else if (obj instanceof Array) {
+    for (var i = 0; i < obj.length; i++) {
+      applyProperties(obj[i]);
+    }
+  }
   return target;
 };
 

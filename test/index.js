@@ -1,6 +1,8 @@
 var Mixin = require('..');
 var assert = require('assert');
 var initMixin = Mixin.initMixin;
+var equal = assert.equal;
+function K() {}
 
 describe('mixin test', function() {
 
@@ -201,6 +203,29 @@ describe('mixin test', function() {
     assert.equal(obj.mixin3, true);
     assert.equal(obj.mixin2, true);
     assert.equal(obj.mixin1, true);
+  });
+
+  describe('ember test suite', function() {
+    it('should apply properties using apply()', function() {
+      var MixinA = Mixin.create({
+        foo: 'Foo', baz: K
+      });
+      var obj = {};
+      MixinA.apply(obj);
+      assert.equal('Foo', obj.foo);
+      assert.equal(K, obj.baz)
+    });
+
+    it('should apply annonymous properties', function() {
+      var obj = {};
+      Mixin.mixin(obj, {
+        foo: 'FOO',
+        baz: K
+      });
+
+      equal(obj.foo, 'FOO');
+      equal(obj.baz, K);
+    });
   });
 
 });
