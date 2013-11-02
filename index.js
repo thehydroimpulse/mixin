@@ -170,6 +170,18 @@ Mixin.prototype.applyObject = function(obj, target) {
   var fns = {};
   var values = target;
 
+  function nextMixin(mix) {
+    if (mix.properties) {
+      applyProperties(mix.properties);
+    }
+
+    if (mix.mixins) {
+      for (var i = 0; i < mix.mixins.length; i++) {
+        nextMixin(mix.mixins[i]);
+      }
+    }
+  }
+
   function applyProperties(props) {
     if (!props) {
       throw new Error("No properties found.");
@@ -205,8 +217,9 @@ Mixin.prototype.applyObject = function(obj, target) {
   if (obj instanceof Mixin) {
     for (var i = 0; i < obj.mixins.length; i++) {
       var mixin = obj.mixins[i];
-      applyMixins(mixin);
-      applyProperties(mixin.properties);
+      nextMixin(mixin);
+      //applyMixins(mixin);
+      //applyProperties(mixin.properties);
     }
   } else if ('object' === typeof obj && !(obj instanceof Array)) {
     applyProperties(target);
